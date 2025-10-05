@@ -1,0 +1,1 @@
+A simple PyGame application to play Backgammon against another player or a Bot.
