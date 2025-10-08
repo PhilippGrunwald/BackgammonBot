@@ -38,16 +38,14 @@ def generate_following_states_one_dice_black_turn(board, white_bar, black_bar, d
             # there is only a single white piece on the position, so this piece gets send to the bar
             next_board = board.copy()
             next_board[24-dice] = -1
-            next_black_bar = black_bar - 1
-            return [(next_board, white_bar + 1, next_black_bar)]    
+            return [(next_board, white_bar + 1, black_bar - 1)]    
         
         else:
             # the position is empty or already occupied by black so the move is valid and needs to be done
             # generate the following position
             next_board = board.copy()
             next_board[24-dice] -= 1
-            next_black_bar = black_bar - 1
-            return [(next_board, white_bar, next_black_bar)]
+            return [(next_board, white_bar, black_bar - 1)]
     
     # The bar is empty. Now we loop over all by black occupied positions and check if the move is possible
     # Here we only consider moves that do not save one of the black pieces in blacks goal.
@@ -111,10 +109,102 @@ def generate_following_states_one_dice_black_turn(board, white_bar, black_bar, d
     return next_positions
 
 
+
+def generate_following_states_one_dice_white_turn(board, white_bar, black_bar, dice):
+
+    # whites home is at position 24 so the playing direction is increasing. The last position is 0
+    # The dice is a number between 1 and 6
+    
+    # first we check if there is a piece in the bar, that needs to be played
+    if white_bar > 0:
+        # we need to check if the relative field is empty:
+        # if the dice is a 1, we need to check position 23 etc
+        if board[dice-1] < -1:
+            # the position is blocked so there is no valid move
+            return []
+        
+        elif board[dice-1] == -1:
+            # there is only a single black piece on the position, so this piece gets send to the bar
+            next_board = board.copy()
+            next_board[dice-1] = 1
+            return [(next_board, white_bar - 1, black_bar + 1)]    
+        
+        else:
+            # the position is empty or already occupied by white so the move is valid and needs to be done
+            # generate the following position
+            next_board = board.copy()
+            next_board[dice-1] += 1
+            return [(next_board, white_bar - 1, black_bar)]
+    
+    # The bar is empty. Now we loop over all by white occupied positions and check if the move is possible
+    # Here we only consider moves that do not save one of the white pieces in whites goal.
+    # we only need to check to the 23-dice position.
+    next_positions = []
+    for i in range(0, 23 - dice):
+        if board[i] <= 0:
+            # the position is not occupied by black so we continue with the next position
+            continue
+        # the position is occupied by black
+        # we need to check if the position after dice jumps
+        if board[i+dice] < -1: 
+            # blocked by white
+            continue 
+
+        elif board[i+dice] == -1:
+            # only one black piece on the field, that gets send to the black bar
+            next_board = board.copy()
+            next_board[i] -= 1
+            next_board[i+dice] = 1
+            next_positions.append((next_board, white_bar, black_bar + 1))
+
+        else:
+            # position is empty or already occupied by white
+            next_board = board.copy()
+            next_board[i] -= 1
+            next_board[i+dice] += 1
+            next_positions.append((next_board, white_bar, black_bar))
+
+
+    # so we now need to consider all moves where one can safe a black piece in blacks basis
+
+    # this is only allowed if all positions of blacks pieces are <= 5
+    lowest_white_position = None
+    for i in range(0, 24, 1):
+        if board[i] > 0:
+            lowest_white_position = i
+            break
+    
+    if lowest_white_position <= 17:
+        # not allowed to save black pieces in the base
+        return next_positions
+    
+    # here it is allowed to save black pieces in the base.
+    # dice 1 -> pos 0 can be saved
+    # dice 2 -> pos 1 can be saved
+    # -> if highest_black_position >= dice-1, then only the position dice-1 can be saved
+    
+    if board[24-dice] > 0:
+        # there are white pieces on the position of the dice roll, so this checker needs to be beared off
+        next_board = board.copy()
+        next_board[24-dice] -= 1
+        next_positions.append((next_board, white_bar, black_bar))
+
+    elif lowest_white_position > 24 - dice:
+        # only possible way for bearing off is to bear off a checker at the highest_black_position
+        next_board = board.copy()
+        next_board[lowest_white_position] -= 1
+        next_positions.append((next_board, white_bar, black_bar))
+
+    return next_positions
+
+
+
+
 if __name__ == "__main__":
     s = get_starting_position()
 
-    following_positions = generate_following_states_one_dice_black_turn(s[0], s[1], s[2], 5)
+
+    following_positions = generate_following_states_one_dice_white_turn(s[0], 0, 0, 5)
     print(following_positions)
     print(len(following_positions))
 
