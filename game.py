@@ -22,6 +22,73 @@ def get_starting_position():
 
 
 
+def process_white_human_move(board, white_bar, black_bar, dice, input):
+
+    if input == "-":
+        return (board, white_bar, black_bar)
+
+    if input == "BAR":
+        print("YYYY")
+        if white_bar <= 0:
+            print("BAR not possible, since Bar is empty")
+            return False
+        # bar move
+        # check if the position at dice-1 is occupied
+        if board[dice-1] < -1:
+            return False
+        elif board[dice-1] == -1:
+            next_board = board.copy()
+            next_board[dice-1] = 1
+            return (next_board, white_bar - 1, black_bar + 1)
+        else:
+            next_board = board.copy()
+            next_board[dice-1] += 1
+            return (next_board, white_bar - 1, black_bar)
+        
+    if white_bar > 0:
+        print("input has to be 'BAR'")
+        return False
+
+
+    input = int(input)
+    index = input - 1
+
+    if index >= 24 or index < 0:
+        print("input invalid range")
+        return None
+
+    if board[index] <= 0:
+        # move is not possible, since there are no white pieces at the starting position
+        print("move not possible!")
+        return None
+    
+    if index + dice <= 23:
+        start = index
+        end = index + dice
+        # not a bearing off move
+        if board[end] < -1:
+            print("Invalid move, positions blocked")
+            return False
+        if board[end] == -1:
+            next_board = board.copy()
+            next_board[start] -= 1
+            next_board[end] = 1
+            return (next_board, white_bar, black_bar + 1)
+        else:
+            next_board = board.copy()
+            next_board[start] -= 1
+            next_board[end] += 1
+            return (next_board, white_bar, black_bar)
+        
+    else:
+        # bearing off move
+        # TODO add all rules:
+        next_board = board.copy()
+        next_board[index] -= 1
+        return (next_board, white_bar, black_bar)
+
+
+
 def generate_following_states_one_dice_black_turn(board, white_bar, black_bar, dice, next_positions, seen):
     # next_positions is the return array
 
@@ -359,7 +426,7 @@ def simple_next_black_move(board, white_bar, black_bar, dice1, dice2):
     possible_moves = generate_following_states_black(board, white_bar, black_bar, dice1, dice2)
 
     max_expected = -100000000000000000000000
-    best_state = None
+    best_state = (board, white_bar, black_bar)
     for state in possible_moves:
 
         # generate all possible dice combinations
@@ -369,7 +436,10 @@ def simple_next_black_move(board, white_bar, black_bar, dice1, dice2):
             for j in range(i, 6):
                 possible_moves_white = generate_following_states_white(state[0], state[1], state[2], i, j)
                 evaluations = [evaluate(p_move[0], p_move[1], p_move[2]) for p_move in possible_moves_white]
-                min_eval = min(evaluations)
+                if len(evaluations) > 0:
+                    min_eval = min(evaluations)
+                else:
+                    min_eval = -100
                 expected_value += 1 / 36 * min_eval if i == j else 1 / 18 * min_eval
 
         if expected_value >= max_expected:
